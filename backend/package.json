@@ -1,0 +1,15 @@
+{
+  "name": "cca2server",
+  "version": "1.0.0",
+  "description": "express server for cloud computing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alexander Witedja",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.4",
+    "jsonwebtoken": "^8.5.1"
+  }
+}
