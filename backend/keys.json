@@ -2,6 +2,6 @@
     "mongoHost": "cluster0-rgpac.gcp.mongodb.net",
     "mongoPort": "YOUR_MONGO_PORT",
     "mongoDatabase": "mydb?retryWrites=true&w=majority",
-    "mongoUser": "alex1234",
-    "mongoPass": "Goblokpol56!"
+    "mongoUser": "your user",
+    "mongoPass": "your password"
 }
