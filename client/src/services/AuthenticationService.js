@@ -1,23 +1,24 @@
 import axios from 'axios'
+import { API_URL } from './constants'
 
 class AuthenticationService {
 
   register(email, password) {
-    return axios.post('http://localhost:3001/auth/register', {
+    return axios.post(`${API_URL}auth/register`, {
       email,
       password
     })
   }
 
   login(email, password) {
-    return axios.post('http://localhost:3001/auth/login',{
+    return axios.post(`${API_URL}auth/login`,{
       email,
       password
     })
   }
 
-  sendToken(token) {
-    return axios.post('http://localhost:3001/auth/checkToken', {
+  sendToken() {
+    return axios.post(`${API_URL}auth/checkToken`, {
       token: sessionStorage.getItem('jwtToken')
     })
   }

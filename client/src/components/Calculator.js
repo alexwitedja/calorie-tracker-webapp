@@ -12,6 +12,8 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import CalculatorService from '../services/CalculatorService'
+import SearchService from '../services/SearchService'
 
 const useStyles = theme => ({
   image: {
@@ -44,7 +46,7 @@ const useStyles = theme => ({
     margin: theme.spacing(3, 0, 2),
   },
   record: {
-    marginTop: '20%'
+    marginTop: '10%',
   }
 })
 
@@ -53,16 +55,16 @@ class Calculator extends Component {
     super();
     this.state = {
       total: '0',
-      foods: [{
-        name: 'apple',
-        amount: '60',
-        calories: 100
-      }],
+      foods: [],
       food: '',
       amount: '',
+      todayCal: '',
     }
     this.handleInputChange = this.handleInputChange.bind(this)
     this.submitFood = this.submitFood.bind(this)
+    this.handleTrack = this.handleTrack.bind(this)
+    this.calculateTotal = this.calculateTotal.bind(this)
+    this.todayTotal = this.todayTotal.bind(this)
   }
 
   handleInputChange = (event) => {
@@ -72,17 +74,66 @@ class Calculator extends Component {
     });
   }
 
+  calculateTotal() {
+    let sum = 0;
+    this.state.foods.map(food => {
+      sum += food.calories
+    });
+
+    this.setState({
+      total: sum
+    })
+  }
+
   submitFood = (event) => {
     let { food, amount } = this.state
-    let calories = 100
-    let data = {
-      name: food,
-      amount,
-      calories,
-    }
-    this.setState({
-      foods: this.state.foods.concat(data)
+
+    SearchService.searchFood(food)
+    .then(res => {
+      if(res.data.foodData.msg === null) {
+        var calories = parseInt((res.data.foodData.energy * (amount/100)) / 4.184, 10)
+        let data = {
+          name: food,
+          amount,
+          calories
+        }
+        this.setState({
+          foods: this.state.foods.concat(data)
+        }, this.calculateTotal)
+      } else {
+        alert('Food not found');
+      }
+    }, err =>{
+      alert('Food not found');
     })
+  }
+
+  todayTotal(){
+    let email = sessionStorage.getItem('authenticatedUser')
+    console.log('hi')
+    CalculatorService.getCalToday(email)
+      .then(res => {
+        this.setState({
+          todayCal: res.data.sum
+        })
+      }, err => {
+        alert('Uh oh something is wrong')
+      })
+  }
+  
+  handleTrack() {
+    let email = sessionStorage.getItem('authenticatedUser')
+    CalculatorService.trackCalories(email, this.state.total)
+      .then(res => {
+        this.todayTotal();
+        this.setState({ foods: [], total: '0' });
+      }, err => {
+        alert('something is not right');
+      });
+  }
+
+  componentDidMount() {
+    this.todayTotal();
   }
 
   render() {
@@ -146,38 +197,50 @@ class Calculator extends Component {
                       variant="contained"
                       color="primary"
                       className={classes.record}
+                      onClick={this.handleTrack}
                     >
                       Record this
                     </Button>
+                    <Typography variant="h5">
+                      Today you've eaten: {this.state.todayCal} calories
+                    </Typography>
                   </Paper>
                 </Grid>
               </Grid>
             </Grid>
             <Grid item xs={8}>
               <Paper className={classes.show}>
-                <Typography variant="h4">
-                  Foods you've entered:
-                </Typography>
-                <Table className={classes.table} size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Foods</TableCell>
-                      <TableCell align="right">Amount&nbsp;(g)</TableCell>
-                      <TableCell align="right">calories</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {this.state.foods.map(row => (
-                      <TableRow key={row.name}>
-                        <TableCell component="th" scope="row">
-                          {row.name}
-                        </TableCell>
-                        <TableCell align="right">{row.amount}</TableCell>
-                        <TableCell align="right">{row.calories}</TableCell>
+                {this.state.foods.length === 0 ?
+                  <Typography variant="h3">
+                    Please enter some foods
+                  </Typography>
+                  :
+                  <>
+                    <Typography variant="h4">
+                      Foods you've entered:
+                    </Typography>
+                    <Table className={classes.table} size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Foods</TableCell>
+                        <TableCell align="right">Amount&nbsp;(g)</TableCell>
+                        <TableCell align="right">calories</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {this.state.foods.map(row => (
+                        <TableRow key={row.name}>
+                          <TableCell component="th" scope="row">
+                            {row.name}
+                          </TableCell>
+                          <TableCell align="right">{row.amount}</TableCell>
+                          <TableCell align="right">{row.calories}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </>
+                }
               </Paper>
             </Grid>
           </Grid>

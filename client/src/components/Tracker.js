@@ -8,6 +8,11 @@ import Typography from '@material-ui/core/Typography'
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
 import { Link } from 'react-router-dom'
+import Chart from 'react-google-charts'
+
+import CalculatorService from '../services/CalculatorService'
+import RecommenderService from '../services/RecommenderService'
+import SearchService from '../services/SearchService'
 
 const useStyles = theme => ({
   image: {
@@ -27,6 +32,9 @@ const useStyles = theme => ({
   },
   graph: {
     height:'40vw'
+  },
+  submit: {
+    marginLeft: '10px'
   }
 })
 
@@ -36,9 +44,36 @@ class Tracker extends Component {
     this.state = {
       food: '',
       amount: '',
+      calorie: '',
+      data: [],
+      goal: '',
+      options: {
+        legend: { position: "bottom"},
+      },
+      today: ''
     }
     this.handleInputChange = this.handleInputChange.bind(this)
     this.submitFood = this.submitFood.bind(this)
+    this.fetchData = this.fetchData.bind(this)
+    this.recordFood = this.recordFood.bind(this)
+  }
+
+  submitFood = (event) => {
+    let { food, amount } = this.state
+    
+    SearchService.searchFood(food)
+    .then(res => {
+      if(res.data.foodData.msg === null) {
+        var calories = parseInt((res.data.foodData.energy * (amount/100)) / 4.184, 10)
+        this.setState({
+          calorie: calories
+        })
+      } else {
+        alert('Food not found');
+      }
+    }, err =>{
+      alert('Food not found');
+    })
   }
 
   handleInputChange = (event) => {
@@ -48,12 +83,46 @@ class Tracker extends Component {
     });
   }
 
-  submitFood = (event) => {
-    let { food, amount } = this.state
-    let data = {
-      food,
-      event
-    }
+  recordFood() {
+    let email = sessionStorage.getItem('authenticatedUser');
+
+    CalculatorService.trackCalories(email, this.state.calorie)
+      .then(res => {
+        this.fetchData()
+      }, err => {
+        alert('something is wrong')
+      })
+  }
+
+  fetchData() {
+    let email = sessionStorage.getItem('authenticatedUser');
+    CalculatorService.getData(email)
+      .then(res => {
+        this.setState({
+          data: res.data.data
+        });
+      }, err => {
+        alert('something is not right');
+      })
+  }
+
+  componentDidMount() {
+    this.fetchData();
+    let email = sessionStorage.getItem('authenticatedUser');
+    RecommenderService.getGoal(email)
+      .then(res => {
+        this.setState({
+          goal: res.data.goal
+        })
+      }, err => {
+        alert('something is not right');
+      })
+    CalculatorService.getCalToday(email)
+      .then(res => {
+        this.setState({
+          today: res.data.sum
+        })
+      })
   }
 
   render() {
@@ -67,7 +136,7 @@ class Tracker extends Component {
             <Grid item xs={4}>
               <Paper className={classes.input}>
                 <Typography variant="h6">
-                  Enter kCals one by one
+                  Enter calories one by one
                 </Typography>
                 <div>
                   <TextField
@@ -95,18 +164,31 @@ class Tracker extends Component {
                     type="number"
                     onChange={this.handleInputChange}
                   />
+                  { this.state.calorie && 
+                    <Typography variant="h5">
+                      That's {this.state.calorie} calories
+                    </Typography>
+                  }
                   <Button
                     variant="contained"
                     color="primary"
                     className={classes.submit}
                     onClick={this.submitFood}
                   >
-                    Submit
+                    Search
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    className={classes.submit}
+                    onClick={this.recordFood}
+                  >
+                    Record
                   </Button>
                 </div>
                 <br />
                 <Typography>
-                  Or go to calculator page to enter many
+                  Or go to calculator page to enter in bulk
                 </Typography>
                 <br />
                 <Button
@@ -122,8 +204,24 @@ class Tracker extends Component {
             </Grid>
             <Grid item xs={8}>
               <Paper className={classes.graph}>
-                <Typography variant="h5">
-                  This is your progress this week
+                <Typography variant="h4">
+                  Your progress this week:
+                </Typography>
+                {
+                  this.state.data.length > 0 && 
+                  <Chart
+                  chartType="LineChart"
+                  width="100%"
+                  height="400px"
+                  data={this.state.data}
+                  options={this.state.options}
+                  />
+                }
+                <Typography variant="h4">
+                  Your Goal is: {this.state.goal} calories/day
+                </Typography>
+                <Typography variant="h4">
+                  You've eaten: {this.state.today} calories today
                 </Typography>
               </Paper>
             </Grid>

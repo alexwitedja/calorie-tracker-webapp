@@ -25,7 +25,6 @@ export default function withAuth(ComponentToProtect) {
           },
           (err) => {
             console.log(err)
-            alert('Please log in!')
             this.setState({
               redirect: true,
               loading: false,

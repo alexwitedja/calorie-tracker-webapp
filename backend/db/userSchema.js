@@ -4,10 +4,17 @@ const bcrypt = require('bcrypt');
 
 const saltRounds = 1;
 // this will be our data base's data structure 
+const CalSchema = new Schema({
+  date: { type: String },
+  calories: { type: Number}
+});
+
 const UserSchema = new Schema(
   {
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    goal: { type: Number },
+    tracker: [CalSchema]
   },
 );
 

@@ -15,6 +15,7 @@ router.post('/register', function(req, res) {
     const user = new User({ email, password });
     user.save(function(err) {
       if (err) {
+        console.log(err);
         res.status(500)
           .send("Error registering new user please try again.");
       } else {
@@ -25,7 +26,6 @@ router.post('/register', function(req, res) {
 
 router.post('/login', function(req, res) {
   const { email, password } = req.body;
-  console.log(email)
   User.findOne({ email }, function(err, user) {
     if (err) {
       console.error(err);

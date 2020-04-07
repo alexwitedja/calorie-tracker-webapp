@@ -1,2 +1,14 @@
 runtime: nodejs
 env: flex
+
+resources:
+  cpu: 0.5
+  memory_gb: 1.5
+
+automatic_scaling:
+  max_num_instances: 1
+
+handlers:
+- url: /favicon.ico
+  static_files: public/favicon.ico
+  upload: public/favicon.ico
